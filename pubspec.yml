@@ -1,0 +1,36 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Siapkan project dan build APK
+        run: |
+          mkdir build_app && cd build_app
+          flutter create --org com.webapp --project-name my_webapp .
+          cp ../pubspec.yaml pubspec.yaml
+          cp ../main.dart lib/main.dart
+          rm -rf test
+          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+          flutter pub get
+          flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aplikasi-apk
+          path: build_app/build/app/outputs/flutter-apk/app-release.apk
